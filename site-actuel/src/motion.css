@@ -1,0 +1,75 @@
+/* ============================================================
+   Motion — couche d'animation (chargée après studio.css, hors @layer).
+   Les classes .motion / .m-pending sont posées par js/motion/init.js,
+   jamais quand « réduire les animations » est actif.
+   ============================================================ */
+
+/* Haut de page masqué le temps que GSAP démarre (évite un flash). */
+.m-pending .hero__grid > div > *,
+.m-pending .hero__card,
+.m-pending .fcell{opacity:0}
+
+/* Captures de projets : l'image zoomée (survol, parallaxe) reste dans son cadre,
+   sans passer par-dessus la barre du navigateur. */
+.shot__img{overflow:hidden}
+
+/* Masques SplitText : un peu d'air pour ne pas couper jambages et approches. */
+.mw-mask,.mc-mask{padding:0 .06em .14em;margin:0 -.06em -.14em}
+
+/* Filet des en-têtes de section, tracé de gauche à droite (--rule : 0 → 1). */
+.motion .sec-head{position:relative;border-top-color:transparent}
+.motion .sec-head::before{content:"";position:absolute;left:0;right:0;top:-1px;height:1px;background:var(--color-line);transform:scaleX(var(--rule,1));transform-origin:left}
+.motion .section--dark .sec-head::before{background:var(--color-d-line)}
+/* Trait de l'eyebrow (--ln : 0 → 1). */
+.motion .eyebrow::before{transform:scaleX(var(--ln,1));transform-origin:left}
+
+/* GSAP gère les transforms des boutons (magnétisme) : transitions de couleur seulement. */
+.motion .btn{transition-property:background-color,border-color,color,box-shadow}
+
+/* Timeline du parcours : ligne d'accent qui se trace (--tl) et points qui s'allument (--dot). */
+.motion .tl{position:relative}
+.motion .tl::after{content:"";position:absolute;left:-2px;top:0;bottom:0;width:2px;background:var(--color-accent);transform:scaleY(var(--tl,1));transform-origin:top}
+.motion .tlitem::before{z-index:1;transform:scale(var(--dot,1))}
+
+/* Barre de progression de lecture. */
+.m-progress{position:fixed;top:0;left:0;right:0;height:2px;z-index:70;background:var(--color-accent);transform-origin:left;transform:scaleX(0);pointer-events:none}
+
+/* Curseur « Voir le projet » (souris uniquement, voir site.js). */
+.m-cursor{position:fixed;top:0;left:0;z-index:80;pointer-events:none;display:flex;align-items:center;gap:8px;padding:11px 14px;border-radius:var(--r);background:var(--color-ink);color:var(--color-surface);font-family:var(--font-fm);font-size:11px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;visibility:hidden}
+.m-cursor svg{width:13px;height:13px;color:var(--color-accent)}
+.m-cursor-on .project .shot{cursor:none}
+
+@media (prefers-reduced-motion:no-preference){
+  /* Micro-interactions CTA : flèche qui avance, léger enfoncement au clic. */
+  .btn svg{transition:transform .25s cubic-bezier(.2,.7,.2,1)}
+  .btn-accent:hover svg{transform:translateX(3px)}
+  .btn:active{transform:scale(.98)}
+  .tlink svg{transition:transform .25s}
+  .tlink:hover svg{transform:translateY(2px)}
+
+  /* Liens de navigation : soulignement qui se dessine. */
+  .nav__links a:not(.btn){background:linear-gradient(currentColor,currentColor) left bottom/0 1px no-repeat;transition:color .15s,background-size .3s cubic-bezier(.2,.7,.2,1)}
+  .nav__links a:not(.btn):hover{background-size:100% 1px}
+}
+
+@media (prefers-reduced-motion:no-preference) and (hover:hover){
+  /* Cartes projets : filet sombre + ombre portée douce au survol. */
+  .project{transition:border-color .3s,box-shadow .5s cubic-bezier(.2,.7,.2,1)}
+  .project:hover{border-color:var(--color-ink);box-shadow:0 34px 60px -42px rgba(35,31,32,.5)}
+  .project:hover .plink svg{transform:translate(2px,-2px)}
+
+  /* Autres projets : trait d'accent qui se dessine en haut de la carte. */
+  .mini{position:relative}
+  .mini::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--color-accent);transform:scaleX(0);transform-origin:left;transition:transform .45s cubic-bezier(.2,.7,.2,1)}
+  .mini:hover::before{transform:scaleX(1)}
+  .mini:hover .plink svg{transform:translate(2px,-2px)}
+
+  /* Stack : le tag survolé passe à l'encre. */
+  .skilltags .tag{transition:color .2s,border-color .2s}
+  .skilltags .tag:hover{color:var(--color-ink);border-color:var(--color-ink)}
+}
+
+@media (max-width:640px){
+  /* Sur mobile, le menu déroulant garde ses séparateurs d'origine. */
+  .nav__links a:not(.btn){background:none}
+}

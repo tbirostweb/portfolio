@@ -1,0 +1,79 @@
+/* ============================================================
+   Nouvelle DA "studio" — même langage visuel que birostweb.fr :
+   surfaces claires, filets fins, angles nets, tracking serré,
+   boutons plats, portrait sombre, grille encadrée.
+   Chargé APRÈS output.css (donc hors @layer) : il l'emporte sur
+   le CSS Tailwind sans avoir besoin de !important.
+   ============================================================ */
+:root{--r:3px}
+
+body{background:var(--color-surface)}
+html{scroll-padding-top:76px}
+
+/* ---- Navigation ---- */
+.nav{background:rgba(251,250,246,.96)}
+.brand{font-size:24px;letter-spacing:-.035em;gap:10px}
+.brand b{width:34px;height:34px;border-radius:2px;display:grid;place-items:center}
+.brand b::before{content:'TB';color:var(--color-surface);font-size:16px;letter-spacing:-.06em;font-family:var(--font-fd);font-weight:700}
+.nav__links a{font-family:var(--font-fb);font-size:14px}
+.nav__toggle{border-radius:2px}
+
+/* ---- Boutons plats ---- */
+.btn{font-family:var(--font-fb);font-weight:500;border-width:1px;min-height:44px;padding:13px 20px;border-radius:var(--r)}
+.btn:hover{transform:none}
+.btn-ghost:hover{background:var(--color-paper);color:var(--color-ink)}
+
+/* ---- Titres / hero ---- */
+.eyebrow{letter-spacing:.065em}
+.h2{letter-spacing:-.035em}
+.hero{background:var(--color-surface);border-bottom:1px solid var(--color-line)}
+.hero h1{letter-spacing:-.045em;line-height:1.02}
+.hero__sub{font-size:17px}
+.chip{border-radius:2px;background:transparent;font-size:11px;letter-spacing:.025em}
+
+/* ---- Portrait sombre ---- */
+.portrait{background:var(--color-ink);color:var(--color-surface);border-color:var(--color-ink);border-radius:var(--r)}
+.portrait::before{content:'THÉO BIROST / DÉVELOPPEUR WEB';position:absolute;top:24px;left:24px;font-family:var(--font-fm);font-size:11px;letter-spacing:.08em;color:var(--color-d-dim)}
+.portrait__mono{color:var(--color-accent);letter-spacing:-.08em}
+.portrait__badge{border-radius:2px;box-shadow:none;border-color:var(--color-d-line);background:var(--color-ink);color:var(--color-surface)}
+
+/* ---- En-têtes de section : filet haut ---- */
+.sec-head{border-top:1px solid var(--color-line);padding-top:24px}
+.section--dark .sec-head{border-color:var(--color-d-line)}
+
+/* ---- Projets en cartes encadrées ---- */
+.projects{gap:24px}
+.project{padding:clamp(20px,3vw,36px);background:var(--color-surface);border:1px solid var(--color-line);border-radius:var(--r)}
+.project h3{letter-spacing:-.025em}
+.shot{border-radius:2px}
+.shot__bar{background:var(--color-paper)}
+
+/* ---- Tags nets ---- */
+.tag{border-radius:2px;background:rgba(229,226,214,.22)}
+.section--dark .tag{background:transparent}
+
+/* ---- Grille "autres projets" en filets ---- */
+.mini-grid{gap:0;border-top:1px solid var(--color-line);border-left:1px solid var(--color-line)}
+.mini{border:0;border-right:1px solid var(--color-line);border-bottom:1px solid var(--color-line);border-radius:0}
+.mini:hover{background:var(--color-surface)}
+.mini h3{font-size:26px;letter-spacing:-.025em}
+
+/* ---- Formulaire clair sur section sombre ---- */
+.form{background:var(--color-surface);border-color:var(--color-surface);border-radius:var(--r);color:var(--color-ink)}
+.field label{font-family:var(--font-fb);font-size:13px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--color-gray)}
+.field input,.field textarea{background-color:var(--color-surface);border-color:var(--color-line);border-radius:var(--r);color:var(--color-ink)}
+.field input::placeholder,.field textarea::placeholder{color:var(--color-gray)}
+.field input:focus,.field textarea:focus,.field input:focus-visible,.field textarea:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px;border-color:var(--color-line)}
+
+@media(max-width:920px){
+  .project{gap:24px}
+  .hero__card{width:100%}
+}
+@media(max-width:640px){
+  .brand{font-size:20px}
+  .brand b{width:30px;height:30px}
+  .nav__links{background:var(--color-surface)}
+  .hero h1{font-size:clamp(38px,10vw,56px)}
+  .hero__cta .btn{width:100%;justify-content:center}
+  .project{padding:18px}
+}

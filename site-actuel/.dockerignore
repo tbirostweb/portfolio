@@ -1,0 +1,11 @@
+.git
+.gitignore
+.idea
+.DS_Store
+node_modules
+.env
+README.md
+*.md
+dist/
+src/build.css
+vendor/
