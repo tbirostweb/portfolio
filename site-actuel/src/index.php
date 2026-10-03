@@ -88,9 +88,8 @@ function asset(string $path): string {
       </div>
     </div>
     <aside class="hero__card">
-      <!-- Remplace le bloc .portrait par : <div class="portrait"><img src="ta-photo.jpg" alt="Théo Birost"></div> -->
       <div class="portrait">
-        <span class="portrait__mono">TB</span>
+        <img src="<?= asset('img/theo-birost.webp') ?>" alt="Théo Birost, développeur web" width="800" height="1000" decoding="async" fetchpriority="high">
         <div class="portrait__badge"><span>Théo Birost</span><span class="dot">● Troyes, FR</span></div>
       </div>
     </aside>
