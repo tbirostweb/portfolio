@@ -32,7 +32,9 @@
 <ul>
   <li>Nom, adresse e-mail et message : champs obligatoires, nécessaires pour vous répondre.</li>
   <li>Adresse IP : utilisée de façon transitoire pour limiter les envois abusifs (quota), sous forme d'empreinte cryptographique (hachage) conservée dans un fichier temporaire du serveur.</li>
+  <li>Éléments techniques anti-spam : un identifiant à usage unique et un horodatage sont insérés dans le formulaire (champs masqués), et un champ « piège » invisible est contrôlé ; ils ne contiennent aucune information vous concernant.</li>
 </ul>
+<p>Le contenu de votre message n'est pas enregistré par le site : il est uniquement transmis par e-mail à l'éditeur. Comme tout serveur web, le serveur du site journalise les requêtes reçues (adresse IP, date, adresse demandée, navigateur) sur sa sortie standard <span class="todo">[À COMPLÉTER : durée de conservation de ces journaux d'accès, fixée par la configuration de l'hébergement]</span>.</p>
 
 <h2>Finalités et bases légales</h2>
 <ul>
@@ -44,7 +46,7 @@
 <p>Le message est transmis par e-mail à l'éditeur via un serveur d'envoi SMTP (principal ou de secours, selon la configuration : Google Gmail ou OVH d'après la documentation du projet) <span class="todo">[À COMPLÉTER : confirmer les prestataires réellement configurés en production, leur localisation et les garanties applicables aux éventuels transferts hors Union européenne]</span>. Aucune donnée n'est vendue.</p>
 
 <h2>Durée de conservation</h2>
-<p>Messages reçus : <span class="todo">[À COMPLÉTER : durée fixée par l'éditeur, proportionnée à la finalité]</span>. Fichiers de quota : effacés automatiquement, au plus 24 heures après leur création.</p>
+<p>Messages reçus : <span class="todo">[À COMPLÉTER : durée fixée par l'éditeur, proportionnée à la finalité]</span>. Fichiers de quota (empreinte d'adresse IP) : supprimés automatiquement lors d'une utilisation ultérieure du formulaire dès qu'ils sont inactifs depuis plus de 24 heures ; fichiers d'identifiants à usage unique : supprimés de la même façon après 2 heures.</p>
 
 <h2>Cookies et traceurs</h2>
 <p>Ce site ne dépose aucun cookie et n'utilise ni outil de mesure d'audience ni police ou script externe, d'après le code source <span class="todo">[À COMPLÉTER : à confirmer par un contrôle réseau/cookies du site déployé]</span>.</p>
