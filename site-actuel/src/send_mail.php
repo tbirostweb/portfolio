@@ -2,78 +2,13 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require 'vendor/autoload.php';
+// Le fichier peut être inclus par les tests : pas d'exécution du flux sans POST réel.
+require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/contact_lib.php';
 
 // En production (Dokploy), les variables sont injectées dans l'environnement.
 // En local, on les charge depuis le .env s'il existe.
-try {
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
-    $dotenv->load();
-} catch (Dotenv\Exception\InvalidPathException $e) {
-    // Pas de .env : normal en prod.
-}
-
-/**
- * Renvoie l'IP du visiteur. Derrière un proxy (Dokploy/Traefik), on prend
- * la première IP de X-Forwarded-For ; sinon on retombe sur REMOTE_ADDR.
- */
-function contact_client_ip(): string
-{
-    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        $parts = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-        $ip = trim($parts[0]);
-        if (filter_var($ip, FILTER_VALIDATE_IP)) {
-            return $ip;
-        }
-    }
-    return $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-}
-
-/**
- * Rate limit fichier par IP : true si la limite est dépassée.
- * Pas de base de données sur ce projet, donc stockage sur le filesystem
- * du conteneur (réinitialisé à chaque redéploiement, ce qui reste acceptable
- * pour ce cas d'usage).
- */
-function contact_rate_limited(string $ip, int $maxRequests = 5, int $windowSeconds = 3600): bool
-{
-    $dir = sys_get_temp_dir() . '/contact_form_rl';
-    if (!is_dir($dir)) {
-        mkdir($dir, 0700, true);
-    }
-
-    $file = $dir . '/' . hash('sha256', $ip) . '.json';
-    $handle = fopen($file, 'c+');
-    if (!$handle) {
-        return false; // On ne bloque pas l'envoi si le filesystem n'est pas disponible.
-    }
-
-    flock($handle, LOCK_EX);
-    $raw = stream_get_contents($handle);
-    $timestamps = json_decode($raw ?: '[]', true);
-    if (!is_array($timestamps)) {
-        $timestamps = [];
-    }
-
-    $now = time();
-    $timestamps = array_values(array_filter($timestamps, function ($t) use ($now, $windowSeconds) {
-        return $t > $now - $windowSeconds;
-    }));
-
-    $limited = count($timestamps) >= $maxRequests;
-    if (!$limited) {
-        $timestamps[] = $now;
-        ftruncate($handle, 0);
-        rewind($handle);
-        fwrite($handle, json_encode($timestamps));
-        fflush($handle);
-    }
-
-    flock($handle, LOCK_UN);
-    fclose($handle);
-
-    return $limited;
-}
+contact_load_env();
 
 /**
  * Construit le corps HTML de l'email de notification reçu par le propriétaire
@@ -230,13 +165,6 @@ function contact_spam_assessment(string $name, string $email, string $message): 
     ];
 }
 
-/** Lecture robuste d'une variable d'environnement (quel que soit variables_order). */
-function contact_env(string $key): ?string
-{
-    $v = $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key);
-    return ($v === false || $v === null || $v === '') ? null : (string) $v;
-}
-
 /**
  * Profils SMTP disponibles, dans l'ordre de priorité.
  * Primaire = SMTP_* ; secours = SMTP2_*. On garde ceux qui sont complets.
@@ -270,64 +198,88 @@ function contact_apply_smtp(PHPMailer $m, array $p): void
     $m->SMTPAuth   = true;
     $m->Username   = $p['user'];
     $m->Password   = $p['pass'];
-    $m->SMTPSecure = $p['secure'];
+    // SMTP_SECURE=none : réservé aux tests locaux (aucun chiffrement) ; sinon tls/ssl.
+    $m->SMTPSecure = $p['secure'] === 'none' ? '' : $p['secure'];
+    if ($p['secure'] === 'none') {
+        $m->SMTPAutoTLS = false;
+    }
     $m->Port       = $p['port'];
+    $m->Timeout    = 10;
 }
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
-    // --- Rate limit par IP : coupe le spam en rafale avant tout autre traitement ---
-    if (contact_rate_limited(contact_client_ip())) {
-        http_response_code(429);
-        echo "Trop de tentatives. Merci de réessayer plus tard.";
-        exit;
+    // --- Kill-switch + secret HMAC obligatoire : sans eux, aucun traitement ni envoi ---
+    if (contact_disabled()) {
+        contact_log('disabled');
+        contact_respond(503, "Le formulaire est temporairement indisponible. Merci d'écrire directement à contact@theo-birost.fr.");
+    }
+    $secret = contact_secret();
+    if ($secret === null) {
+        contact_log('config_secret_missing_or_short');
+        contact_respond(503, "Le formulaire est temporairement indisponible. Merci d'écrire directement à contact@theo-birost.fr.");
+    }
+
+    // --- Types : uniquement des chaînes (pas de tableaux) avant tout traitement ---
+    foreach (['name', 'email', 'message', 'token', 'ts', 'nonce'] as $field) {
+        if (isset($_POST[$field]) && !is_string($_POST[$field])) {
+            contact_respond(400, "Requête invalide. Merci de recharger la page et réessayer.");
+        }
+    }
+    if (isset($_POST['website']) && !is_string($_POST['website'])) {
+        contact_respond(400, "Requête invalide. Merci de recharger la page et réessayer.");
+    }
+
+    // --- Rate limit par IP + plafond global : coupe le spam avant tout autre traitement ---
+    $rate = contact_rate_check(contact_client_ip());
+    if ($rate === 'unavailable') {
+        contact_log('rate_storage_unavailable');
+        contact_respond(503, "Le formulaire est temporairement indisponible. Merci d'écrire directement à contact@theo-birost.fr.");
+    }
+    if ($rate === 'limited') {
+        contact_log('rate_limited');
+        contact_respond(429, "Trop de tentatives. Merci de réessayer plus tard.");
     }
 
     // --- Honeypot : les bots génériques remplissent tous les champs, y compris celui-ci ---
     // On répond comme si tout allait bien pour ne pas leur indiquer qu'ils sont détectés.
     if (!empty($_POST['website'])) {
-        http_response_code(200);
-        echo "Merci ! Votre message a bien été envoyé.";
-        exit;
+        contact_respond(200, "Merci ! Votre message a bien été envoyé.");
     }
 
-    // --- Jeton signé HMAC + délai minimum : bloque les POST directs sans passage par la page ---
+    // --- Jeton signé HMAC (nonce + horodatage) : bloque les POST directs sans passage par la page ---
     $ts    = $_POST['ts'] ?? '';
+    $nonce = $_POST['nonce'] ?? '';
     $token = $_POST['token'] ?? '';
-    $expectedToken = hash_hmac('sha256', (string) $ts, contact_env('CONTACT_FORM_SECRET') ?? '');
 
-    if (!ctype_digit((string) $ts) || !hash_equals($expectedToken, (string) $token)) {
-        http_response_code(400);
-        echo "Requête invalide. Merci de recharger la page et réessayer.";
-        exit;
+    if (!contact_verify_token($secret, $ts, $nonce, $token)) {
+        contact_respond(400, "Requête invalide. Merci de recharger la page et réessayer.");
     }
 
     $elapsed = time() - (int) $ts;
+    if ($elapsed < -60) {
+        // Horodatage dans le futur : refusé explicitement.
+        contact_respond(400, "Requête invalide. Merci de recharger la page et réessayer.");
+    }
     if ($elapsed > 3600) {
-        http_response_code(400);
-        echo "Formulaire expiré. Merci de recharger la page et réessayer.";
-        exit;
+        contact_respond(400, "Formulaire expiré. Merci de recharger la page et réessayer.");
     }
     if ($elapsed < 3) {
         // Envoyé trop vite pour un humain : traité en silence comme le honeypot.
-        http_response_code(200);
-        echo "Merci ! Votre message a bien été envoyé.";
-        exit;
+        contact_respond(200, "Merci ! Votre message a bien été envoyé.");
     }
 
     // --- Validation stricte des champs ---
-    $name    = str_replace(["\r", "\n"], '', strip_tags(trim($_POST["name"] ?? '')));
-    $email   = filter_var(trim($_POST["email"] ?? ''), FILTER_SANITIZE_EMAIL);
-    $message = trim($_POST["message"] ?? '');
+    $name    = str_replace(["\r", "\n"], '', strip_tags(trim($_POST['name'] ?? '')));
+    $email   = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
+    $message = trim($_POST['message'] ?? '');
 
     if (
         $name === '' || mb_strlen($name) > 100
         || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 254
         || $message === '' || mb_strlen($message) < 10 || mb_strlen($message) > 5000
     ) {
-        http_response_code(400);
-        echo "Veuillez remplir tous les champs correctement et réessayer.";
-        exit;
+        contact_respond(400, "Veuillez remplir tous les champs correctement et réessayer.");
     }
 
     // --- Anti-spam / anti-phishing : scoring ---
@@ -335,16 +287,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Spam évident : on répond OK (comme le honeypot) sans rien envoyer.
     if ($spam['block']) {
-        http_response_code(200);
-        echo "Merci ! Votre message a bien été envoyé.";
-        exit;
+        contact_respond(200, "Merci ! Votre message a bien été envoyé.");
     }
 
     $profiles = contact_smtp_profiles();
     if (empty($profiles)) {
-        http_response_code(500);
-        echo "Le message n'a pas pu être envoyé. Merci d'écrire directement à contact@theo-birost.fr.";
-        exit;
+        contact_log('smtp_not_configured');
+        contact_respond(500, "Le message n'a pas pu être envoyé. Merci d'écrire directement à contact@theo-birost.fr.");
+    }
+
+    // --- Usage unique du jeton : réservation atomique (pending) avant tout envoi.
+    // Deux POST simultanés ou rejoués : un seul passe, l'autre reçoit 409.
+    $reservation = contact_nonce_reserve($nonce);
+    if ($reservation === 'replay') {
+        contact_respond(409, "Ce message a déjà été traité. Merci de recharger la page pour en envoyer un autre.");
+    }
+    if ($reservation !== 'reserved') {
+        contact_log('nonce_storage_unavailable');
+        contact_respond(503, "Le formulaire est temporairement indisponible. Merci d'écrire directement à contact@theo-birost.fr.");
     }
 
     // Destinataire des notifications (par défaut la boîte OVH ; surchargeable via CONTACT_TO).
@@ -356,9 +316,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         . "Email : $email\n\n"
         . "Message :\n$message";
 
-    // On tente chaque profil SMTP dans l'ordre : le 1er qui envoie l'emporte, sinon on bascule sur le suivant.
+    // On tente chaque profil SMTP dans l'ordre. Bascule vers le secours UNIQUEMENT si l'échec
+    // est survenu avant la transmission du message (connexion, authentification, enveloppe) :
+    // un échec ambigu après DATA (timeout, réponse perdue) peut signifier "déjà accepté",
+    // on ne renvoie alors pas automatiquement (état "unknown", pas de doublon).
     $sent = false;
-    foreach ($profiles as $p) {
+    $ambiguous = false;
+    foreach ($profiles as $i => $p) {
         try {
             $mail = new PHPMailer(true);
             $mail->CharSet = 'UTF-8';
@@ -388,19 +352,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $sent = true;
             break;
         } catch (Exception $e) {
-            // Échec : on tente le profil de secours suivant.
+            // Journal sans donnée : numéro de profil et nature de l'échec seulement.
+            $safeBeforeData = (bool) preg_match('/connect|authenticat|sender|recipient|Invalid address|from address/i', $e->getMessage());
+            contact_log('smtp_failed profile=' . ($i + 1) . ' stage=' . ($safeBeforeData ? 'before_data' : 'ambiguous'));
+            if (!$safeBeforeData) {
+                $ambiguous = true;
+                break;
+            }
         }
     }
 
     if ($sent) {
-        http_response_code(200);
-        echo "Merci ! Votre message a bien été envoyé.";
-    } else {
-        http_response_code(500);
-        echo "Le message n'a pas pu être envoyé. Merci d'écrire directement à contact@theo-birost.fr.";
+        contact_nonce_mark($nonce, 'sent');
+        contact_respond(200, "Merci ! Votre message a bien été envoyé.");
     }
+    // Échec ambigu : le message a peut-être été remis, on n'autorise pas de renvoi avec ce jeton.
+    contact_nonce_mark($nonce, $ambiguous ? 'unknown' : 'failed');
+    contact_respond(500, "Le message n'a pas pu être envoyé. Merci d'écrire directement à contact@theo-birost.fr.");
 
 } else {
-    http_response_code(403);
-    echo "Un problème est survenu lors de l'envoi, veuillez réessayer.";
+    contact_respond(403, "Un problème est survenu lors de l'envoi, veuillez réessayer.");
 }

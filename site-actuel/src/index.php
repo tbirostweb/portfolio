@@ -2,14 +2,16 @@
 // Jeton anti-spam du formulaire de contact : un HMAC signé sur l'horodatage
 // du rendu de la page. send_mail.php vérifie la signature et le délai
 // minimum écoulé avant d'accepter le message (voir plus bas dans ce fichier).
-require __DIR__ . '/vendor/autoload.php';
-try {
-    Dotenv\Dotenv::createImmutable(__DIR__)->load();
-} catch (Dotenv\Exception\InvalidPathException $e) {
-    // Pas de .env : normal en prod, les variables viennent de l'environnement.
+require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/contact_lib.php';
+contact_load_env();
+// Secret absent ou < 32 octets : aucun jeton n'est signé (le formulaire est alors
+// désactivé côté page, et send_mail.php refuse en 503).
+$contactSecret = contact_secret();
+$contactForm   = ($contactSecret !== null && !contact_disabled()) ? contact_make_token($contactSecret) : null;
+if ($contactForm === null) {
+    contact_log('form_disabled_no_secret_or_killswitch');
 }
-$contactFormTs    = time();
-$contactFormToken = hash_hmac('sha256', (string) $contactFormTs, $_ENV['CONTACT_FORM_SECRET'] ?? '');
 
 // Cache-busting : ajoute ?v=<empreinte du contenu> aux fichiers statiques.
 // Le .htaccess met ces URL versionnées en cache 1 an : dès qu'un fichier
@@ -52,6 +54,8 @@ function asset(string $path): string {
 <script defer src="<?= asset('js/lib/SplitText.min.js') ?>"></script>
 <script defer src="<?= asset('js/motion/core.js') ?>"></script>
 <script defer src="<?= asset('js/motion/site.js') ?>"></script>
+<script defer src="<?= asset('js/contact.js') ?>"></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"Théo Birost — Portfolio","url":"https://portfolio.theo-birost.fr/","inLanguage":"fr-FR"},{"@type":"Person","name":"Théo Birost","url":"https://portfolio.theo-birost.fr/","jobTitle":"Développeur web full-stack","address":{"@type":"PostalAddress","addressLocality":"Troyes","addressCountry":"FR"},"sameAs":["https://github.com/theobirost","https://www.linkedin.com/in/theobirost"]}]}</script>
 </head>
 <body>
 
@@ -313,14 +317,19 @@ function asset(string $path): string {
       <form class="form" id="cform" method="post" action="send_mail.php">
         <div class="field"><label for="name">Nom</label><input id="name" name="name" type="text" autocomplete="name" required maxlength="100"></div>
         <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="254"></div>
-        <div class="field"><label for="message">Votre message</label><textarea id="message" name="message" required maxlength="5000"></textarea></div>
-        <input type="hidden" name="ts" value="<?= htmlspecialchars((string) $contactFormTs, ENT_QUOTES) ?>">
-        <input type="hidden" name="token" value="<?= htmlspecialchars($contactFormToken, ENT_QUOTES) ?>">
+        <div class="field"><label for="message">Votre message</label><textarea id="message" name="message" required minlength="10" maxlength="5000"></textarea></div>
+        <?php if ($contactForm !== null): ?>
+        <input type="hidden" name="ts" value="<?= htmlspecialchars($contactForm['ts'], ENT_QUOTES) ?>">
+        <input type="hidden" name="nonce" value="<?= htmlspecialchars($contactForm['nonce'], ENT_QUOTES) ?>">
+        <input type="hidden" name="token" value="<?= htmlspecialchars($contactForm['token'], ENT_QUOTES) ?>">
+        <?php endif; ?>
         <div style="position:absolute;left:-9999px;top:-9999px" aria-hidden="true">
           <label for="website">Laisser ce champ vide</label>
           <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
         </div>
-        <button type="submit" class="btn btn-accent btn-lg" style="justify-content:center">Envoyer
+        <p class="form__note" style="font-size:13px;line-height:1.5;margin:0">Les informations saisies (nom, adresse e-mail, message) servent uniquement à vous répondre. Détails et droits&nbsp;: <a href="confidentialite.html">politique de confidentialité</a>.</p>
+        <p id="cform-status" role="status" aria-live="polite" style="margin:0;min-height:1.4em"><?= $contactForm === null ? "Le formulaire est momentanément indisponible. Écrivez-moi à contact@theo-birost.fr." : '' ?></p>
+        <button type="submit" class="btn btn-accent btn-lg" style="justify-content:center"<?= $contactForm === null ? ' disabled' : '' ?>>Envoyer
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
       </form>
     </div>
@@ -332,7 +341,7 @@ function asset(string $path): string {
   <div class="wrap">
     <div class="footer__in">
       <span class="footer__b">Théo Birost — Développeur web full-stack</span>
-      <nav class="footer__l"><a href="#projets">Projets</a><a href="#competences">Compétences</a><a href="#parcours">Parcours</a><a href="#contact">Contact</a><a href="#top">↑ Haut</a></nav>
+      <nav class="footer__l"><a href="#projets">Projets</a><a href="#competences">Compétences</a><a href="#parcours">Parcours</a><a href="#contact">Contact</a><a href="#top">↑ Haut</a><a href="mentions-legales.html">Mentions légales</a><a href="confidentialite.html">Confidentialité</a></nav>
     </div>
     <div class="footer__meta"><span>© 2026 Théo Birost · Troyes, France</span><span>Développeur web full-stack</span></div>
   </div>
@@ -357,28 +366,6 @@ function asset(string $path): string {
     link.addEventListener('click', function() {
       menu.classList.remove('open');
       toggleBtn.setAttribute('aria-expanded', false);
-    });
-  });
-})();
-
-// --- Script pour le formulaire de contact ---
-(function() {
-  var form = document.getElementById('cform');
-  form.addEventListener('submit', function(event) {
-    event.preventDefault();
-    var formData = new FormData(form);
-
-    fetch('send_mail.php', {
-      method: 'POST',
-      body: formData
-    })
-    .then(response => response.text())
-    .then(text => {
-      alert(text);
-      form.reset();
-    })
-    .catch(function() {
-      alert("Une erreur est survenue. Merci de réessayer.");
     });
   });
 })();
