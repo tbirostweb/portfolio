@@ -61,3 +61,8 @@ RewriteRule ^vendor/ - [F,L]
 
 # ---------------- 404 personnalisée ----------------
 ErrorDocument 404 /404.html
+
+# CV contenant des coordonnées personnelles : transmis sur demande.
+<Files "CV.pdf">
+    Require all denied
+</Files>

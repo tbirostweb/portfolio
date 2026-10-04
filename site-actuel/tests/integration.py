@@ -141,11 +141,10 @@ f = form_fields(); time.sleep(3.2)
 s, _, _ = post(f); check('SMTP refus DATA => 500 générique', s == 500)
 s, _, _ = post(f); check('retry même jeton après ambigu => 409', s == 409)
 
-# ---------- 5. failover avant DATA (connexion primaire impossible) ----------
+# ---------- 5. connexion SMTP impossible : 500 générique, aucun secours ----------
 stop(N); sink = Sink(); e = smtp_env(sink, SMTP_PORT=1)
-e.update(SMTP2_HOST='host.docker.internal', SMTP2_USERNAME='t2@example.test', SMTP2_PASSWORD='pw-fictif', SMTP2_PORT=sink.port, SMTP2_SECURE='none')
 run(N, **e); f = form_fields(); time.sleep(3.2)
-s, _, _ = post(f); time.sleep(0.5); check('bascule secours (200, 1 mail)', s == 200 and sink.count == 1)
+s, _, _ = post(f); time.sleep(0.5); check('SMTP injoignable => 500, 0 mail (pas de secours)', s == 500 and sink.count == 0)
 
 # ---------- 6. secret absent / court, kill-switch, stockage HS, quota ----------
 for label, env in {'secret absent': {}, 'secret court': {'CONTACT_FORM_SECRET': 'court'}, 'kill-switch': {'CONTACT_FORM_DISABLED': '1'}, 'stockage quota HS': {'CONTACT_STATE_DIR': '/proc/nope'}}.items():

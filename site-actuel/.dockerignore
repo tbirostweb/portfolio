@@ -19,3 +19,6 @@ README.md
 dist/
 src/build.css
 tests
+
+# Ne pas distribuer le CV personnel dans l’image publique.
+src/pdf/CV.pdf

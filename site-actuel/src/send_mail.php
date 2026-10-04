@@ -167,13 +167,13 @@ function contact_spam_assessment(string $name, string $email, string $message): 
 
 /**
  * Profils SMTP disponibles, dans l'ordre de priorité.
- * Primaire = SMTP_* ; secours = SMTP2_*. On garde ceux qui sont complets.
+ * Primaire = SMTP_* uniquement ; aucun secours vers un fournisseur non vérifié.
  * @return array<int,array{host:string,user:string,pass:string,secure:string,port:int}>
  */
 function contact_smtp_profiles(): array
 {
     $profiles = [];
-    foreach (['', '2'] as $suffix) {
+    foreach ([''] as $suffix) {
         $host = contact_env("SMTP{$suffix}_HOST");
         $user = contact_env("SMTP{$suffix}_USERNAME");
         $pass = contact_env("SMTP{$suffix}_PASSWORD");
@@ -316,10 +316,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         . "Email : $email\n\n"
         . "Message :\n$message";
 
-    // On tente chaque profil SMTP dans l'ordre. Bascule vers le secours UNIQUEMENT si l'échec
-    // est survenu avant la transmission du message (connexion, authentification, enveloppe) :
-    // un échec ambigu après DATA (timeout, réponse perdue) peut signifier "déjà accepté",
-    // on ne renvoie alors pas automatiquement (état "unknown", pas de doublon).
+    // Un seul profil SMTP (aucun secours). Un échec ambigu après DATA (timeout, réponse perdue)
+    // peut signifier "déjà accepté" : état "unknown", pas de renvoi automatique.
     $sent = false;
     $ambiguous = false;
     foreach ($profiles as $i => $p) {

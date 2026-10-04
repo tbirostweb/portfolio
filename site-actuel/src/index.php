@@ -86,14 +86,12 @@ function asset(string $path): string {
         <a href="#projets" class="btn btn-accent btn-lg">Voir mes projets
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         <a href="#contact" class="btn btn-ghost btn-lg">Me contacter</a>
-        <a href="<?= asset('pdf/CV.pdf') ?>" class="tlink" download>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
-          Mon CV (PDF)</a>
+        <a href="#contact" class="tlink">CV sur demande</a>
       </div>
     </div>
     <aside class="hero__card">
       <div class="portrait">
-        <img src="<?= asset('img/theo-birost.webp') ?>" alt="Théo Birost, développeur web" width="800" height="1000" decoding="async" fetchpriority="high">
+        <img src="<?= asset('img/illustration-originale.svg') ?>" alt="Illustration schématique originale, sans capture du projet" width="800" height="1000" decoding="async" fetchpriority="high">
         <div class="portrait__badge"><span>Théo Birost</span><span class="dot">● Troyes, FR</span></div>
       </div>
     </aside>
@@ -123,7 +121,7 @@ function asset(string $path): string {
       <article class="project reveal">
         <div class="shot">
           <div class="shot__bar"><i></i><i></i><i></i><span class="shot__url">maisondubonheurstesavine.fr</span></div>
-          <div class="shot__img"><img src="<?= asset('img/maisondubonheur.webp') ?>" alt="Maison du Bonheur — site de réservation" width="1400" height="875" loading="lazy" decoding="async"></div>
+          <div class="shot__img"><img src="<?= asset('img/illustration-originale.svg') ?>" alt="Illustration schématique originale, sans capture du projet" width="1400" height="875" loading="lazy" decoding="async"></div>
         </div>
         <div>
           <span class="project__k">Projet client · Stage</span>
@@ -142,7 +140,7 @@ function asset(string $path): string {
       <article class="project reveal">
         <div class="shot">
           <div class="shot__bar"><i></i><i></i><i></i><span class="shot__url">hydrogenbusinessforclimate.com</span></div>
-          <div class="shot__img"> <img src="<?= asset('img/hydrogen_website.webp') ?>" alt="Forum Hydrogen" width="1400" height="804" loading="lazy" decoding="async">
+          <div class="shot__img"> <img src="<?= asset('img/illustration-originale.svg') ?>" alt="Illustration schématique originale, sans capture du projet" width="1400" height="804" loading="lazy" decoding="async">
             </div>
         </div>
         <div>
@@ -162,7 +160,7 @@ function asset(string $path): string {
       <article class="project reveal">
         <div class="shot">
           <div class="shot__bar"><i></i><i></i><i></i><span class="shot__url">generique.theo-birost.fr</span></div>
-          <div class="shot__img"><img src="<?= asset('img/generique.webp') ?>" alt="Générique — index de cinéma" width="1400" height="875" loading="lazy" decoding="async"></div>
+          <div class="shot__img"><img src="<?= asset('img/illustration-originale.svg') ?>" alt="Illustration schématique originale, sans capture du projet" width="1400" height="875" loading="lazy" decoding="async"></div>
         </div>
         <div>
           <span class="project__k">Projet perso · Application web</span>
@@ -182,7 +180,7 @@ function asset(string $path): string {
         <div class="shot">
           <div class="shot__bar"><i></i><i></i><i></i><span class="shot__url">clicker — jeu</span></div>
           <div class="shot__img">
-          <img src="<?= asset('img/clicker_img.webp') ?>" alt="Jeu du clicker" width="1400" height="741" loading="lazy" decoding="async">
+          <img src="<?= asset('img/illustration-originale.svg') ?>" alt="Illustration schématique originale, sans capture du projet" width="1400" height="741" loading="lazy" decoding="async">
           </div>
         </div>
         <div>
