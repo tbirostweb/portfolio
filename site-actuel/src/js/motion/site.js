@@ -51,7 +51,7 @@ Motion.run(function (m) {
 
   /* ---------- Projets : carte qui monte, capture qui se dévoile ---------- */
   m.$$('.project').forEach(function (p) {
-    var ptl = gsap.timeline({ scrollTrigger: { trigger: p, start: 'top 85%', once: true } });
+    var ptl = gsap.timeline({ scrollTrigger: { trigger: p, start: 'top 85%', toggleActions: 'play none none none' } });
     m.add(ptl, m.fadeUp(p, { trigger: false, y: 80, scale: .96, duration: 1.1 }), 0);
     var shot = p.querySelector('.shot');
     if (shot) ptl.fromTo(shot, { clipPath: 'inset(0% 0% 100% 0%)' },
@@ -63,7 +63,7 @@ Motion.run(function (m) {
 
   /* ---------- Stack technique : ligne par ligne, tags en cascade ---------- */
   m.$$('.skillrow').forEach(function (row) {
-    var rtl = gsap.timeline({ scrollTrigger: { trigger: row, start: 'top 88%', once: true } });
+    var rtl = gsap.timeline({ scrollTrigger: { trigger: row, start: 'top 88%', toggleActions: 'play none none none' } });
     m.add(rtl, m.fadeUp(row.querySelector('h3'), { trigger: false, x: -24, y: 0, duration: .7 }), 0);
     m.add(rtl, m.fadeUp(row.querySelectorAll('.tag'), { trigger: false, y: 12, scale: .9, stagger: .035, duration: .5, ease: 'back.out(2)' }), .1);
   });
@@ -85,7 +85,7 @@ Motion.run(function (m) {
     gsap.fromTo(tlEl, { '--tl': 0 }, { '--tl': 1, ease: 'none',
       scrollTrigger: { trigger: tlEl, start: 'top 70%', end: 'bottom 60%', scrub: .4 } });
     m.$$('.tlitem', tlEl).forEach(function (it) {
-      var itl = gsap.timeline({ scrollTrigger: { trigger: it, start: 'top 78%', once: true } });
+      var itl = gsap.timeline({ scrollTrigger: { trigger: it, start: 'top 78%', toggleActions: 'play none none none' } });
       itl.fromTo(it, { '--dot': 0 }, { '--dot': 1, duration: .6, ease: 'back.out(3)' }, 0);
       m.add(itl, m.fadeUp(it.querySelectorAll(':scope > *'), { trigger: false, x: 30, y: 0, stagger: .07, duration: .7 }), .05);
     });
@@ -94,7 +94,7 @@ Motion.run(function (m) {
   /* ---------- Prestations ---------- */
   var pre = document.getElementById('prestations');
   if (pre) {
-    var prtl = gsap.timeline({ scrollTrigger: { trigger: pre, start: 'top 75%', once: true } });
+    var prtl = gsap.timeline({ scrollTrigger: { trigger: pre, start: 'top 75%', toggleActions: 'play none none none' } });
     m.add(prtl, m.fadeUp(pre.querySelector('.eyebrow'), { trigger: false, x: -8, y: 0, duration: .6 }), 0);
     m.add(prtl, m.words(pre.querySelector('.h2'), { trigger: false, stagger: .05, rotate: 5 }), .1);
     m.add(prtl, m.fadeUp(pre.querySelectorAll('.lead, .btn'), { trigger: false, y: 16, stagger: .12 }), .35);
@@ -106,7 +106,7 @@ Motion.run(function (m) {
     gsap.fromTo(cta, { clipPath: 'inset(0% 3% 0% 3% round 3px)' }, { clipPath: 'inset(0% 0% 0% 0% round 0px)', ease: 'none',
       scrollTrigger: { trigger: cta, start: 'top bottom', end: 'top 35%', scrub: true } });
     var col = cta.querySelector('.cta__grid > div');
-    var ctl = gsap.timeline({ scrollTrigger: { trigger: cta, start: 'top 70%', once: true } });
+    var ctl = gsap.timeline({ scrollTrigger: { trigger: cta, start: 'top 70%', toggleActions: 'play none none none' } });
     if (col) {
       m.add(ctl, m.fadeUp(col.querySelector('.eyebrow'), { trigger: false, x: -8, y: 0, duration: .6 }), 0);
       m.add(ctl, m.words(col.querySelector('.h2'), { trigger: false, chars: true, stagger: .02, rotate: 6 }), .1);
