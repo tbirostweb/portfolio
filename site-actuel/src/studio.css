@@ -20,8 +20,12 @@ html{scroll-padding-top:76px}
 
 /* ---- Boutons plats ---- */
 .btn{font-family:var(--font-fb);font-weight:500;border-width:1px;min-height:44px;padding:13px 20px;border-radius:var(--r)}
+.btn{transition:background-color .18s ease,color .18s ease,border-color .18s ease}
 .btn:hover{transform:none}
-.btn-ghost:hover{background:var(--color-paper);color:var(--color-ink)}
+.btn-ghost{background:transparent;color:var(--color-ink);border-color:var(--color-ink)}
+.btn-ghost:hover,.btn-ghost:focus-visible{background:var(--color-ink);color:var(--color-surface);border-color:var(--color-ink)}
+.section--dark .btn-ghost{color:var(--color-d-text);border-color:var(--color-d-line)}
+.section--dark .btn-ghost:hover,.section--dark .btn-ghost:focus-visible{background:var(--color-d-text);color:var(--color-ink);border-color:var(--color-d-text)}
 
 /* ---- Titres / hero ---- */
 .eyebrow{letter-spacing:.065em}
