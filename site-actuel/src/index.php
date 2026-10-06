@@ -91,7 +91,7 @@ function asset(string $path): string {
     </div>
     <aside class="hero__card">
       <div class="portrait">
-        <img src="<?= asset('img/theo-birost.webp') ?>" alt="Théo Birost, développeur web" width="800" height="1000" decoding="async" fetchpriority="high">
+        <img src="<?= asset('img/theo-birost.webp') ?>" srcset="<?= asset('img/theo-birost-800.webp') ?> 800w, <?= asset('img/theo-birost.webp') ?> 1003w" sizes="(max-width: 920px) min(380px, 100vw), 460px" alt="Théo Birost, développeur web" width="1003" height="1254" decoding="async" fetchpriority="high">
         <div class="portrait__badge"><span>Théo Birost</span><span class="dot">● Troyes, FR</span></div>
       </div>
     </aside>
