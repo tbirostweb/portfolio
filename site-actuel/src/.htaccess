@@ -4,9 +4,6 @@
 # ============================================================
 Options -Indexes
 
-# Corps de requête borné (formulaire : < 32 Ko)
-LimitRequestBody 32768
-
 # ---------------- En-têtes de sécurité ----------------
 <IfModule mod_headers.c>
     Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains"
@@ -15,8 +12,8 @@ LimitRequestBody 32768
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     Header always set Permissions-Policy "accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(self), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), usb=(), interest-cohort=()"
     Header always set Cross-Origin-Opener-Policy "same-origin"
-    # CSP : script inline verrouillé par hash (à recalculer si le <script> inline d'index.php change) ; polices auto-hébergées
-    Header always set Content-Security-Policy "default-src 'self'; base-uri 'self'; script-src 'self' 'sha256-H/FaGhTVSOiyqXm3tRMLS9X2gjg7VIT2I8nSJDafJQM='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests"
+    # CSP : script inline verrouillé par hash ; Google Fonts autorisé (CSS + fichiers)
+    Header always set Content-Security-Policy "default-src 'self'; base-uri 'self'; script-src 'self' 'sha256-3+7wA1OFlTrc1jK2reCf/ODwPKlNPeVCRlYCtBClFpg='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; upgrade-insecure-requests"
     Header always unset X-Powered-By
     Header unset X-Powered-By
     <FilesMatch "\.php$">
@@ -52,7 +49,7 @@ LimitRequestBody 32768
 <FilesMatch "^\.env">
     Require all denied
 </FilesMatch>
-<FilesMatch "(composer\.(json|lock)|package(-lock)?\.json|\.htaccess|entrypoint\.sh|input\.css|contact_lib\.php)$">
+<FilesMatch "(composer\.(json|lock)|package(-lock)?\.json|\.htaccess|entrypoint\.sh|input\.css)$">
     Require all denied
 </FilesMatch>
 
@@ -61,8 +58,3 @@ RewriteRule ^vendor/ - [F,L]
 
 # ---------------- 404 personnalisée ----------------
 ErrorDocument 404 /404.html
-
-# CV contenant des coordonnées personnelles : transmis sur demande.
-<Files "CV.pdf">
-    Require all denied
-</Files>
