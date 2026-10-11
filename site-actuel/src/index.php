@@ -39,6 +39,9 @@ function asset(string $path): string {
 <meta name="twitter:title" content="Théo Birost — Développeur web full-stack">
 <meta name="twitter:description" content="Portfolio — projets web réels, du design au déploiement.">
 <meta name="twitter:image" content="https://portfolio.theo-birost.fr/og-image.png">
+<link rel="icon" href="<?= asset('img/favicon.svg') ?>" type="image/svg+xml">
+<link rel="icon" href="<?= asset('img/favicon-32.png') ?>" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="<?= asset('img/apple-touch-icon.png') ?>">
 <link rel="icon" href="<?= asset('img/TB.png') ?>" type="image/png">
 <!-- Polices auto-hébergées (RGPD : aucune requête vers Google) -->
 <link rel="preload" href="fonts/ibmplexsans-400-latin.woff2" as="font" type="font/woff2" crossorigin>
